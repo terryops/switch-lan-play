@@ -1,9 +1,7 @@
 name: Special
 
 on:
-  push:
-    tags:
-    - 'v*'
+ [push]
 
 jobs:
   build-windows:

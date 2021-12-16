@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: make
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+        MSBuild SwitchLanPlay.sln /t:Build /p:Configuration=Release
+    - name: upload built files
+      uses: actions/upload-artifact@v1
+      with:
+        name: lan-play-windows
+        path: build/src/Release/lan-play.exe
+  release:
+    runs-on: ubuntu-latest
+    needs: [ build-windows]
+    steps:
+    - name: Set env
+      run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
+################################################################################
+    - uses: actions/download-artifact@v1
+      with:
+        name: lan-play-windows
+        path: lan-play-windows
+################################################################################
+    - name: rename
+      run: |
+        mv ./lan-play-windows/lan-play.exe ./lan-play-windows/lan-play-win64.exe
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "**/lan-play-*"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
